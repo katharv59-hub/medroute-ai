@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+venv311/
+.env
+
+# Large files (too big for GitHub)
+*.mp4
+*.avi
+*.mov
+*.pt
+*.onnx
+runs/
+dataset/
+models/*.pt
+logs/
+
+# IDE
+.vscode/
+.idea/
+
+# Firebase key (sensitive - add manually on deployment)
+serviceAccountKey.json
+
+# Test files
+test_fp.py
+test_pipeline.py
+
+# OS
+Thumbs.db
+.DS_Store

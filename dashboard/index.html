@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>MedRoute AI — Live Dashboard</title>
+  <meta name="description" content="MedRoute AI — Real-time emergency vehicle monitoring dashboard">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#060614;--card:rgba(15,15,35,0.75);--card2:rgba(20,20,50,0.6);--border:rgba(255,255,255,0.06);--t1:#e8e8f0;--t2:#8888aa;--t3:#555570;--accent:#00d4ff;--ag:rgba(0,212,255,0.12);--red:#ff4466;--rg:rgba(255,68,102,0.12);--green:#00e676;--gg:rgba(0,230,118,0.12);--warn:#ffab00;--r:16px;--rs:10px}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 0%,rgba(0,212,255,0.04),transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(255,68,102,0.03),transparent 60%);pointer-events:none}
+
+    .hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;border-bottom:1px solid var(--border);backdrop-filter:blur(24px);position:sticky;top:0;z-index:100;background:rgba(6,6,20,0.88)}
+    .logo{display:flex;align-items:center;gap:10px}
+    .logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#0066ff);display:flex;align-items:center;justify-content:center;font-size:18px}
+    .logo h1{font-size:17px;font-weight:700;letter-spacing:-0.3px}
+    .logo h1 span{color:var(--accent)}
+    .logo-sub{font-size:10px;color:var(--t3);letter-spacing:0.5px;margin-top:1px}
+    .live{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:500;padding:5px 12px;border-radius:16px;border:1px solid rgba(0,230,118,0.2);background:var(--gg);color:var(--green)}
+    .live.off{color:var(--red);background:var(--rg);border-color:rgba(255,68,102,0.2)}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:p 1.5s ease infinite}
+    .live.off .dot{background:var(--red)}
+    @keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
+
+    .main{padding:20px 28px;max-width:1440px;margin:0 auto;position:relative;z-index:1}
+
+    .tabs{display:flex;gap:6px;margin-bottom:18px}
+    .tab{padding:7px 16px;border-radius:var(--rs);font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--t2);transition:.3s}
+    .tab.active{background:var(--ag);color:var(--accent);border-color:rgba(0,212,255,0.25)}
+    .tab.alert{background:var(--rg);color:var(--red);border-color:rgba(255,68,102,0.25);animation:af 1.5s ease infinite}
+    @keyframes af{0%,100%{border-color:rgba(255,68,102,0.2)}50%{border-color:rgba(255,68,102,0.5)}}
+
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+    .sc{background:var(--card);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:var(--r);padding:18px;transition:.3s}
+    .sc:hover{transform:translateY(-2px);background:var(--card2)}
+    .sl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+    .sv{font-size:26px;font-weight:700;color:var(--accent)}
+    .sc.alert .sv{color:var(--red)}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}
+    .card{background:var(--card);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:var(--r);padding:22px;transition:.3s}
+    .ct{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;font-weight:600}
+
+    /* Junction Map */
+    .jmap{position:relative;width:100%;aspect-ratio:1;max-width:340px;margin:0 auto}
+    .rd{position:absolute;background:rgba(30,30,65,0.8);border-radius:3px}
+    .rd-h{width:100%;height:28%;top:36%;left:0}
+    .rd-v{width:28%;height:100%;top:0;left:36%}
+    .rd-c{position:absolute;width:28%;height:28%;top:36%;left:36%;background:rgba(40,40,75,0.9);border-radius:3px;z-index:2;display:flex;align-items:center;justify-content:center}
+    .rd-c span{font-size:10px;font-weight:700;color:var(--t3)}
+    .sig{position:absolute;width:18px;height:18px;border-radius:50%;z-index:3;transition:.5s;border:2px solid rgba(0,0,0,.3)}
+    .sig.r{background:var(--red);box-shadow:0 0 10px var(--red)}
+    .sig.g{background:var(--green);box-shadow:0 0 10px var(--green)}
+    .s-n{top:28%;left:50%;transform:translateX(-50%)}
+    .s-s{bottom:28%;left:50%;transform:translateX(-50%)}
+    .s-e{top:50%;right:28%;transform:translateY(-50%)}
+    .s-w{top:50%;left:28%;transform:translateY(-50%)}
+    .dl{position:absolute;font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1px;z-index:4}
+    .d-n{top:12%;left:50%;transform:translateX(-50%)}
+    .d-s{bottom:12%;left:50%;transform:translateX(-50%)}
+    .d-e{top:50%;right:8%;transform:translateY(-50%)}
+    .d-w{top:50%;left:8%;transform:translateY(-50%)}
+    .ai{position:absolute;z-index:5;font-size:20px;opacity:0;transition:.5s;filter:drop-shadow(0 0 6px var(--red))}
+    .ai.on{opacity:1;animation:ap 1s ease infinite}
+    @keyframes ap{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+    .a-n{top:16%;left:50%;transform:translateX(-50%)}
+    .a-s{bottom:16%;left:50%;transform:translateX(-50%)}
+    .a-e{top:50%;right:12%;transform:translateY(-50%)}
+    .a-w{top:50%;left:12%;transform:translateY(-50%)}
+
+    /* Detection Panel */
+    .dp{display:flex;flex-direction:column;gap:12px}
+    .ds{padding:12px 16px;border-radius:var(--rs);font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px;transition:.4s}
+    .ds-ok{background:var(--gg);color:var(--green);border:1px solid rgba(0,230,118,0.15)}
+    .ds-alert{background:var(--rg);color:var(--red);border:1px solid rgba(255,68,102,0.2);animation:af 1.5s ease infinite}
+    .ig{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .ii{background:rgba(255,255,255,0.025);border-radius:var(--rs);padding:10px;border:1px solid var(--border)}
+    .il{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+    .iv{font-size:13px;font-weight:600}
+    .mb{display:flex;gap:5px;flex-wrap:wrap}
+    .badge{padding:3px 9px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(255,255,255,0.04);color:var(--t3);border:1px solid var(--border)}
+    .badge.on{color:var(--accent);background:var(--ag);border-color:rgba(0,212,255,0.2)}
+
+    /* History */
+    .hfull{grid-column:1/-1}
+    .ht{width:100%;border-collapse:collapse}
+    .ht th{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+    .ht td{font-size:11px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.02);color:var(--t2)}
+    .ht tr:hover td{background:rgba(255,255,255,0.02)}
+    .hs{max-height:280px;overflow-y:auto}
+    .hs::-webkit-scrollbar{width:3px}
+    .hs::-webkit-scrollbar-thumb{background:var(--t3);border-radius:3px}
+    .lt{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;background:var(--ag);color:var(--accent)}
+    .cb{display:inline-block;height:3px;border-radius:2px;background:var(--accent);min-width:16px}
+    .empty{text-align:center;padding:30px;color:var(--t3);font-size:12px}
+
+    .footer{text-align:center;padding:16px;font-size:10px;color:var(--t3);border-top:1px solid var(--border);margin-top:12px}
+
+    @media(max-width:900px){.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.main{padding:14px}}
+  </style>
+</head>
+<body>
+  <header class="hdr">
+    <div class="logo">
+      <div class="logo-icon">🚑</div>
+      <div>
+        <h1><span>MedRoute</span> AI Dashboard</h1>
+        <div class="logo-sub">Emergency Vehicle Priority • India</div>
+      </div>
+    </div>
+    <div class="live off" id="lb"><div class="dot"></div><span id="lt">Connecting...</span></div>
+  </header>
+
+  <div class="main">
+    <div class="tabs" id="tabs"></div>
+
+    <div class="stats">
+      <div class="sc alert"><div class="sl">Active Alerts</div><div class="sv" id="sAlerts">0</div></div>
+      <div class="sc"><div class="sl">Detections Today</div><div class="sv" id="sToday">0</div></div>
+      <div class="sc"><div class="sl">Avg Confidence</div><div class="sv" id="sConf">—</div></div>
+      <div class="sc"><div class="sl">Uptime</div><div class="sv" id="sUp">—</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="ct">Junction Map — <span id="mJid">J1</span></div>
+        <div class="jmap">
+          <div class="rd rd-h"></div><div class="rd rd-v"></div>
+          <div class="rd-c"><span id="mLabel">J1</span></div>
+          <div class="sig s-n r" id="sN"></div><div class="sig s-s r" id="sS"></div>
+          <div class="sig s-e r" id="sE"></div><div class="sig s-w r" id="sW"></div>
+          <div class="dl d-n">North</div><div class="dl d-s">South</div>
+          <div class="dl d-e">East</div><div class="dl d-w">West</div>
+          <div class="ai a-n" id="aN">🚑</div><div class="ai a-s" id="aS">🚑</div>
+          <div class="ai a-e" id="aE">🚑</div><div class="ai a-w" id="aW">🚑</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ct">Detection Details</div>
+        <div class="dp">
+          <div class="ds ds-ok" id="dStat"><span>✓</span><span id="dText">Monitoring — No ambulance</span></div>
+          <div class="ig">
+            <div class="ii"><div class="il">Lane</div><div class="iv" id="iLane">—</div></div>
+            <div class="ii"><div class="il">Confidence</div><div class="iv" id="iConf">—</div></div>
+            <div class="ii"><div class="il">Type</div><div class="iv" id="iType">—</div></div>
+            <div class="ii"><div class="il">Color</div><div class="iv" id="iCol">—</div></div>
+            <div class="ii"><div class="il">Text/Symbol</div><div class="iv" id="iTxt">—</div></div>
+            <div class="ii"><div class="il">Priority</div><div class="iv" id="iPri">—</div></div>
+          </div>
+          <div>
+            <div class="il" style="margin-bottom:6px">Detection Methods</div>
+            <div class="mb">
+              <span class="badge" id="bY">YOLO</span>
+              <span class="badge" id="bO">OCR</span>
+              <span class="badge" id="bS">✚ SYMBOL</span>
+              <span class="badge" id="bC">COLOR</span>
+            </div>
+          </div>
+          <div class="ii"><div class="il">Last Update</div><div class="iv" id="iTs" style="font-size:11px">—</div></div>
+        </div>
+      </div>
+
+      <div class="card hfull">
+        <div class="ct">Alert History</div>
+        <div class="hs" id="hScroll">
+          <table class="ht"><thead><tr>
+            <th>Time</th><th>Junction</th><th>Lane</th><th>Confidence</th><th>Method</th><th>Type</th><th>Symbol/Text</th>
+          </tr></thead><tbody id="hBody"><tr><td colspan="7" class="empty">No detections yet</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+    <div class="footer">MedRoute AI v2.0.0 — Emergency Vehicle Priority System • Built for Indian Roads</div>
+  </div>
+
+  <script type="module">
+    import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import{getDatabase,ref,onValue,query,limitToLast}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const app=initializeApp({
+      apiKey:"AIzaSyAIbJXv0Idkyq_V3fj8ulJ9344GLvKVurI",
+      authDomain:"ev-priority-sys-001.firebaseapp.com",
+      databaseURL:"https://ev-priority-sys-001-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId:"ev-priority-sys-001",
+      storageBucket:"ev-priority-sys-001.firebasestorage.app",
+      messagingSenderId:"507139522006",
+      appId:"1:507139522006:web:058218d7384e912526b877"
+    });
+    const db=getDatabase(app);
+
+    const $=id=>document.getElementById(id);
+    const JNS=['J1','J2','J3'];
+    let active='J1',jData={},hist=[],sysStart=Date.now();
+
+    function setLive(){$('lb').classList.remove('off');$('lt').textContent='Live — Firebase Connected'}
+
+    // Tabs
+    JNS.forEach(j=>{
+      const t=document.createElement('div');
+      t.className='tab'+(j===active?' active':'');
+      t.textContent=j;t.id='t-'+j;
+      t.onclick=()=>{active=j;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('mJid').textContent=j;$('mLabel').textContent=j;upUI(jData[j]||{})};
+      $('tabs').appendChild(t);
+    });
+
+    // Listen junctions
+    JNS.forEach(j=>{
+      onValue(ref(db,`/junctions/${j}`),s=>{
+        setLive();const d=s.val();if(!d)return;jData[j]=d;
+        const tb=$('t-'+j);d.ambulance_detected?tb.classList.add('alert'):tb.classList.remove('alert');
+        let a=0;JNS.forEach(x=>{if(jData[x]?.ambulance_detected)a++});$('sAlerts').textContent=a;
+        if(j===active)upUI(d);
+      });
+    });
+
+    // Listen history
+    JNS.forEach(j=>{
+      onValue(query(ref(db,`/history/${j}`),limitToLast(50)),s=>{
+        setLive();const d=s.val();if(!d)return;
+        Object.values(d).forEach(e=>{e._j=j;const k=e.timestamp+j;if(!hist.find(h=>(h.timestamp+h._j)===k))hist.push(e)});
+        hist.sort((a,b)=>(b.timestamp||'').localeCompare(a.timestamp||''));
+        renderHist();upStats();
+      });
+    });
+
+    onValue(ref(db,'/system'),s=>{const d=s.val();if(d?.started_at)sysStart=new Date(d.started_at).getTime()});
+
+    function upUI(d){
+      const det=d.ambulance_detected,info=d.ambulance_info||{};
+      $('dStat').className='ds '+(det?'ds-alert':'ds-ok');
+      $('dText').textContent=det?`🚨 AMBULANCE — Lane: ${(d.lane||'').toUpperCase()}`:'Monitoring — No ambulance';
+      ['north','south','east','west'].forEach(dir=>{
+        const s=d.signal_status?.[dir]||'RED';
+        $('s'+dir[0].toUpperCase()).className='sig s-'+dir[0]+' '+(s==='GREEN'?'g':'r');
+        $('a'+dir[0].toUpperCase()).classList.toggle('on',det&&d.lane===dir);
+      });
+      $('iLane').textContent=det?(d.lane||'—').toUpperCase():'—';
+      $('iConf').textContent=d.confidence?(d.confidence*100).toFixed(0)+'%':'—';
+      $('iType').textContent=det?(info.type||'—'):'—';
+      $('iCol').textContent=det?(info.color||'—'):'—';
+      $('iTxt').textContent=det?(info.text_detected||'—'):'—';
+      $('iPri').textContent=d.priority||'—';
+      $('iTs').textContent=d.timestamp?new Date(d.timestamp).toLocaleString('en-IN'):'—';
+      const m=(d.detection_method||'').toUpperCase();
+      $('bY').className='badge'+(m.includes('YOLO')?' on':'');
+      $('bO').className='badge'+(m.includes('OCR')?' on':'');
+      $('bS').className='badge'+(m.includes('SYMBOL')?' on':'');
+      $('bC').className='badge'+(m.includes('COLOR')?' on':'');
+    }
+
+    function renderHist(){
+      if(!hist.length){$('hBody').innerHTML='<tr><td colspan="7" class="empty">No detections yet</td></tr>';return}
+      $('hBody').innerHTML=hist.slice(0,50).map(e=>{
+        const t=e.timestamp?new Date(e.timestamp).toLocaleTimeString('en-IN'):'—';
+        const c=e.confidence?(e.confidence*100).toFixed(0):0;
+        return`<tr><td>${t}</td><td>${e._j}</td><td><span class="lt">${(e.lane||'—').toUpperCase()}</span></td><td>${c}% <span class="cb" style="width:${c*.5}px"></span></td><td>${e.detection_method||'—'}</td><td>${e.ambulance_type||'—'}</td><td>${e.text_detected||'—'}</td></tr>`;
+      }).join('');
+    }
+
+    function upStats(){
+      const today=new Date().toISOString().split('T')[0];
+      const td=hist.filter(e=>e.date===today||(e.timestamp||'').startsWith(today));
+      $('sToday').textContent=td.length;
+      if(td.length){const avg=td.reduce((s,e)=>s+(e.confidence||0),0)/td.length;$('sConf').textContent=(avg*100).toFixed(0)+'%'}
+    }
+
+    setInterval(()=>{
+      const d=Date.now()-sysStart,h=Math.floor(d/36e5),m=Math.floor(d%36e5/6e4),s=Math.floor(d%6e4/1e3);
+      $('sUp').textContent=`${h}h ${String(m).padStart(2,'0')}m`;
+    },1000);
+  </script>
+</body>
+</html>
