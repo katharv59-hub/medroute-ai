@@ -1,8 +1,11 @@
 @echo off
-title ASEP — Ambulance Signal Emergency Priority
+title MedRoute AI — Production Detection System v3.0
 echo ============================================
-echo   ASEP — Starting Detection System
+echo   MedRoute AI v3.0 — Starting System
 echo ============================================
+echo.
+echo   Performance Mode: %PERF_MODE%
+echo   (Set PERF_MODE=LOW, BALANCED, or HIGH in .env)
 echo.
 
 REM Activate virtual environment
