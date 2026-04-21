@@ -23,6 +23,10 @@ logs/
 
 # Firebase key (sensitive - add manually on deployment)
 serviceAccountKey.json
+ev-priority-sys-001-*.json
+
+# Backups
+*.bak
 
 # Test files
 test_fp.py
