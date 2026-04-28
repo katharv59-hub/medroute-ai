@@ -14,9 +14,8 @@ load_dotenv()
 
 # ============ PATHS ============
 BASE_DIR             = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH           = os.path.join(BASE_DIR, "runs", "detect", "ambulance_model_gpu", "weights", "best.pt")
-BASE_MODEL           = os.path.join(BASE_DIR, "models", "yolov8n.pt")
-DATASET_YAML         = os.path.join(BASE_DIR, "dataset", "data.yaml")
+MODEL_PATH = os.path.join(BASE_DIR, "runs", "detect", "runs", "detect", "ambulance_model_v2-2", "weights", "best.pt")
+DATASET_YAML = os.path.join(BASE_DIR, "dataset_merged", "data.yaml")
 SERVICE_ACCOUNT_KEY  = os.getenv("FIREBASE_KEY_PATH")
 LOG_DIR              = os.path.join(BASE_DIR, "logs")
 
@@ -24,7 +23,7 @@ if not SERVICE_ACCOUNT_KEY:
     print("[WARN] FIREBASE_KEY_PATH not set in .env — Firebase disabled.")
 
 # ============ VIDEO SOURCE ============
-VIDEO_SOURCE = os.path.join(BASE_DIR, "test_ambulance.mp4")
+VIDEO_SOURCE = os.path.join(BASE_DIR, "TEST_67.mp4")
 
 # ============================================================
 #  PERFORMANCE MODES
@@ -74,7 +73,7 @@ FPS_LOG_INTERVAL         = _cfg["FPS_LOG_INTERVAL"]
 FRAME_RESIZE = INFERENCE_RESOLUTION
 
 # ============ DETECTION ============
-CONFIDENCE_THRESHOLD = 0.88
+CONFIDENCE_THRESHOLD = 0.50
 VOTING_THRESHOLD     = 2
 USE_GPU              = True         # will be overridden by runtime GPU check
 TRACKER_TYPE         = "CSRT"       # "CSRT" (default, no extra deps) or "KCF"
@@ -82,8 +81,8 @@ TRACKER_TYPE         = "CSRT"       # "CSRT" (default, no extra deps) or "KCF"
 # Anti-false-positive filters
 MIN_BOX_AREA_RATIO    = 0.005
 MAX_BOX_AREA_RATIO    = 0.50
-MIN_ASPECT_RATIO      = 1.2
-CONFIRM_FRAMES        = 5
+MIN_ASPECT_RATIO      = 0.8
+CONFIRM_FRAMES        = 2
 RED_CROSS_MIN_SOLIDITY = 0.35
 RED_CROSS_MAX_SOLIDITY = 0.75
 RED_CROSS_MIN_AREA    = 0.005

@@ -1,0 +1,1 @@
+# MedRoute AI — Detector modules

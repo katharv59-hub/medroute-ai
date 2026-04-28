@@ -38,7 +38,7 @@ def validate_gpu():
         import torch
         if torch.cuda.is_available():
             name = torch.cuda.get_device_name(0)
-            vram = torch.cuda.get_device_properties(0).total_mem / (1024**3)
+            vram = torch.cuda.get_device_properties(0).total_memory / (1024**3)
             log.info(f"GPU: {name} | VRAM: {vram:.1f} GB | CUDA: {torch.version.cuda}")
             return True
         else:
@@ -436,6 +436,11 @@ def run_detection(junction_id, video_source):
             votes = 1
             methods = ["YOLO"]
 
+            # High-confidence YOLO bypass: counts as 2 votes
+            if conf > 0.80:
+                votes = 2
+                methods.append("YOLO_HC")
+
             sym_ok, sym_text = method_symbol_ocr(
                 frame, x1, y1, x2, y2, fc, ocr_cache, did, perf.current_fps)
             if sym_ok:
@@ -448,6 +453,10 @@ def run_detection(junction_id, video_source):
                 methods.append("COLOR")
 
             passed = votes >= VOTING_THRESHOLD
+            streak = confirm._streaks.get(tid, 0) + (1 if passed else 0)
+            print(f"  YOLO hit: conf={conf:.2f} votes={votes}/3 "
+                  f"confirm={streak}/{confirm.required} "
+                  f"methods={'+'.join(methods)}")
             is_confirmed = confirm.update(tid, passed)
 
             if is_confirmed:
